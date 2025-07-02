@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지뢰찾기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background-image: url('mond.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .difficulty-selection {
+            margin-bottom: 30px;
+        }
+
+        .difficulty-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .difficulty-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .difficulty-btn:active {
+            transform: translateY(0);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: rgba(236, 240, 241, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .info-item {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .timer {
+            color: #e74c3c;
+        }
+
+        .mines-left {
+            color: #27ae60;
+        }
+
+        .game-board {
+            display: inline-block;
+            border: 3px solid #34495e;
+            border-radius: 10px;
+            background-image: url('background.jpg');
+            background-size: 480px 480px;
+            background-position: 0 0;
+            background-repeat: no-repeat;
+            padding: 0;
+            position: relative;
+        }
+
+        .board-row {
+            display: flex;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 2px outset #bdc3c7;
+            background-image: url('background.jpg');
+            background-size: 480px 480px;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            color: white;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .cell:hover {
+            background-blend-mode: overlay;
+            background-color: rgba(213, 219, 219, 0.3);
+        }
+
+        .cell.revealed {
+            border: 2px solid #95a5a6;
+            background: rgba(255, 255, 255, 0.9);
+            color: inherit;
+            text-shadow: none;
+        }
+
+        .cell.mine {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .cell.flagged {
+            background: #f39c12;
+            color: white;
+        }
+
+        .cell.flagged::after {
+            content: '🚩';
+        }
+
+        .cell.mine::after {
+            content: '💣';
+        }
+
+        .number-1 { color: #3498db; }
+        .number-2 { color: #27ae60; }
+        .number-3 { color: #e74c3c; }
+        .number-4 { color: #8e44ad; }
+        .number-5 { color: #d35400; }
+        .number-6 { color: #16a085; }
+        .number-7 { color: #2c3e50; }
+        .number-8 { color: #7f8c8d; }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin-top: 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .game-over-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .win-message {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+
+        .lose-message {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 지뢰찾기 게임</h1>
+        
+        <div id="difficultySelection" class="difficulty-selection">
+            <h2>난이도를 선택하세요</h2>
+            <button class="difficulty-btn" onclick="startGame('easy')">초급 (10개 지뢰)</button>
+            <button class="difficulty-btn" onclick="startGame('medium')">중급 (20개 지뢰)</button>
+            <button class="difficulty-btn" onclick="startGame('hard')">고급 (30개 지뢰)</button>
+        </div>
+
+        <div id="gameArea" class="hidden">
+            <div class="game-info">
+                <div class="info-item mines-left">
+                    남은 지뢰: <span id="minesCount">0</span>
+                </div>
+                <div class="info-item timer">
+                    시간: <span id="timer">0</span>초
+                </div>
+                <div class="info-item">
+                    난이도: <span id="currentDifficulty"></span>
+                </div>
+            </div>
+
+            <div id="gameBoard" class="game-board"></div>
+
+            <button class="reset-btn" onclick="resetGame()">새 게임</button>
+
+            <div id="gameOverMessage" class="game-over-message hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            board: [],
+            rows: 16,
+            cols: 16,
+            mines: 10,
+            minesLeft: 10,
+            gameOver: false,
+            gameWon: false,
+            startTime: null,
+            timer: null,
+            difficulty: 'easy'
+        };
+
+        const difficulties = {
+            easy: { mines: 10, name: '초급' },
+            medium: { mines: 20, name: '중급' },
+            hard: { mines: 30, name: '고급' }
+        };
+
+        function startGame(difficulty) {
+            gameState.difficulty = difficulty;
+            gameState.mines = difficulties[difficulty].mines;
+            gameState.minesLeft = gameState.mines;
+            
+            document.getElementById('difficultySelection').classList.add('hidden');
+            document.getElementById('gameArea').classList.remove('hidden');
+            document.getElementById('currentDifficulty').textContent = difficulties[difficulty].name;
+            
+            initializeGame();
+        }
+
+        function initializeGame() {
+            gameState.gameOver = false;
+            gameState.gameWon = false;
+            gameState.startTime = Date.now();
+            gameState.minesLeft = gameState.mines;
+            
+            // 타이머 시작
+            startTimer();
+            
+            // 보드 초기화
+            createBoard();
+            placeMines();
+            calculateNumbers();
+            renderBoard();
+            
+            updateMinesCount();
+            hideGameOverMessage();
+        }
+
+        function createBoard() {
+            gameState.board = [];
+            for (let i = 0; i < gameState.rows; i++) {
+                gameState.board[i] = [];
+                for (let j = 0; j < gameState.cols; j++) {
+                    gameState.board[i][j] = {
+                        mine: false,
+                        revealed: false,
+                        flagged: false,
+                        number: 0
+                    };
+                }
+            }
+        }
+
+        function placeMines() {
+            let minesPlaced = 0;
+            while (minesPlaced < gameState.mines) {
+                const row = Math.floor(Math.random() * gameState.rows);
+                const col = Math.floor(Math.random() * gameState.cols);
+                
+                if (!gameState.board[row][col].mine) {
+                    gameState.board[row][col].mine = true;
+                    minesPlaced++;
+                }
+            }
+        }
+
+        function calculateNumbers() {
+            for (let i = 0; i < gameState.rows; i++) {
+                for (let j = 0; j < gameState.cols; j++) {
+                    if (!gameState.board[i][j].mine) {
+                        let count = 0;
+                        for (let di = -1; di <= 1; di++) {
+                            for (let dj = -1; dj <= 1; dj++) {
+                                const ni = i + di;
+                                const nj = j + dj;
+                                if (ni >= 0 && ni < gameState.rows && nj >= 0 && nj < gameState.cols) {
+                                    if (gameState.board[ni][nj].mine) count++;
+                                }
+                            }
+                        }
+                        gameState.board[i][j].number = count;
+                    }
+                }
+            }
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('gameBoard');
+            boardElement.innerHTML = '';
+            
+            for (let i = 0; i < gameState.rows; i++) {
+                const rowElement = document.createElement('div');
+                rowElement.className = 'board-row';
+                
+                for (let j = 0; j < gameState.cols; j++) {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    cellElement.dataset.row = i;
+                    cellElement.dataset.col = j;
+                    
+                    // 배경 이미지 위치 계산 (각 칸이 전체 이미지의 해당 부분을 보여줌)
+                    const bgPosX = -j * 30;
+                    const bgPosY = -i * 30;
+                    cellElement.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+                    
+                    const cell = gameState.board[i][j];
+                    
+                    if (cell.flagged) {
+                        cellElement.classList.add('flagged');
+                    } else if (cell.revealed) {
+                        cellElement.classList.add('revealed');
+                        if (cell.mine) {
+                            cellElement.classList.add('mine');
+                        } else if (cell.number > 0) {
+                            cellElement.textContent = cell.number;
+                            cellElement.classList.add(`number-${cell.number}`);
+                        }
+                    }
+                    
+                    cellElement.addEventListener('click', () => revealCell(i, j));
+                    cellElement.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        toggleFlag(i, j);
+                    });
+                    
+                    rowElement.appendChild(cellElement);
+                }
+                
+                boardElement.appendChild(rowElement);
+            }
+        }
+
+        function revealCell(row, col) {
+            if (gameState.gameOver || gameState.board[row][col].revealed || gameState.board[row][col].flagged) {
+                return;
+            }
+            
+            const cell = gameState.board[row][col];
+            cell.revealed = true;
+            
+            if (cell.mine) {
+                gameOver(false);
+                return;
+            }
+            
+            if (cell.number === 0) {
+                // 빈 칸이면 주변 칸들도 자동으로 열기
+                for (let di = -1; di <= 1; di++) {
+                    for (let dj = -1; dj <= 1; dj++) {
+                        const ni = row + di;
+                        const nj = col + dj;
+                        if (ni >= 0 && ni < gameState.rows && nj >= 0 && nj < gameState.cols) {
+                            revealCell(ni, nj);
+                        }
+                    }
+                }
+            }
+            
+            checkWinCondition();
+            renderBoard();
+        }
+
+        function toggleFlag(row, col) {
+            if (gameState.gameOver || gameState.board[row][col].revealed) {
+                return;
+            }
+            
+            const cell = gameState.board[row][col];
+            cell.flagged = !cell.flagged;
+            
+            gameState.minesLeft += cell.flagged ? -1 : 1;
+            updateMinesCount();
+            renderBoard();
+        }
+
+        function checkWinCondition() {
+            let revealedCount = 0;
+            const totalCells = gameState.rows * gameState.cols;
+            
+            for (let i = 0; i < gameState.rows; i++) {
+                for (let j = 0; j < gameState.cols; j++) {
+                    if (gameState.board[i][j].revealed) {
+                        revealedCount++;
+                    }
+                }
+            }
+            
+            if (revealedCount === totalCells - gameState.mines) {
+                gameOver(true);
+            }
+        }
+
+        function gameOver(won) {
+            gameState.gameOver = true;
+            gameState.gameWon = won;
+            stopTimer();
+            
+            if (won) {
+                const timeElapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                showGameOverMessage(`🎉 축하합니다! 승리하셨습니다!\n소요 시간: ${timeElapsed}초`, 'win');
+            } else {
+                // 모든 지뢰 표시
+                for (let i = 0; i < gameState.rows; i++) {
+                    for (let j = 0; j < gameState.cols; j++) {
+                        if (gameState.board[i][j].mine) {
+                            gameState.board[i][j].revealed = true;
+                        }
+                    }
+                }
+                showGameOverMessage('💥 게임 오버! 지뢰를 밟았습니다.', 'lose');
+            }
+            
+            renderBoard();
+        }
+
+        function showGameOverMessage(message, type) {
+            const messageElement = document.getElementById('gameOverMessage');
+            messageElement.textContent = message;
+            messageElement.className = `game-over-message ${type}-message`;
+            messageElement.classList.remove('hidden');
+        }
+
+        function hideGameOverMessage() {
+            const messageElement = document.getElementById('gameOverMessage');
+            messageElement.classList.add('hidden');
+        }
+
+        function updateMinesCount() {
+            document.getElementById('minesCount').textContent = gameState.minesLeft;
+        }
+
+        function startTimer() {
+            gameState.timer = setInterval(() => {
+                if (!gameState.gameOver) {
+                    const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+                    document.getElementById('timer').textContent = elapsed;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (gameState.timer) {
+                clearInterval(gameState.timer);
+            }
+        }
+
+        function resetGame() {
+            stopTimer();
+            document.getElementById('difficultySelection').classList.remove('hidden');
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('timer').textContent = '0';
+        }
+    </script>
+</body>
+</html>

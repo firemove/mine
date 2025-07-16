@@ -210,8 +210,23 @@
     <div class="game-container">
         <h1>🎯 지뢰찾기 게임</h1>
         
-        <div id="difficultySelection" class="difficulty-selection">
-            <h2>난이도를 선택하세요</h2>
+        <div id="nameInput" class="difficulty-selection">
+            <h2>사용자 이름을 입력하세요</h2>
+            <input type="text" id="playerName" placeholder="이름을 입력하세요" maxlength="20" style="
+                padding: 10px 15px;
+                font-size: 16px;
+                border: 2px solid #3498db;
+                border-radius: 25px;
+                margin-right: 10px;
+                outline: none;
+                width: 200px;
+            ">
+            <button class="difficulty-btn" onclick="submitName()">확인</button>
+        </div>
+
+        <div id="difficultySelection" class="difficulty-selection hidden">
+            <h2>안녕하세요, <span id="welcomeName"></span>님!</h2>
+            <h3>난이도를 선택하세요</h3>
             <button class="difficulty-btn" onclick="startGame('easy')">초급 (10개 지뢰)</button>
             <button class="difficulty-btn" onclick="startGame('medium')">중급 (20개 지뢰)</button>
             <button class="difficulty-btn" onclick="startGame('hard')">고급 (30개 지뢰)</button>
@@ -224,6 +239,9 @@
                 </div>
                 <div class="info-item timer">
                     시간: <span id="timer">0</span>초
+                </div>
+                <div class="info-item">
+                    플레이어: <span id="playerInfo"></span>
                 </div>
                 <div class="info-item">
                     난이도: <span id="currentDifficulty"></span>
@@ -249,7 +267,8 @@
             gameWon: false,
             startTime: null,
             timer: null,
-            difficulty: 'easy'
+            difficulty: 'easy',
+            playerName: ''
         };
 
         const difficulties = {
@@ -257,6 +276,31 @@
             medium: { mines: 20, name: '중급' },
             hard: { mines: 30, name: '고급' }
         };
+
+        function submitName() {
+            const nameInput = document.getElementById('playerName');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                alert('이름을 입력해주세요!');
+                nameInput.focus();
+                return;
+            }
+            
+            gameState.playerName = name;
+            document.getElementById('welcomeName').textContent = name;
+            document.getElementById('nameInput').classList.add('hidden');
+            document.getElementById('difficultySelection').classList.remove('hidden');
+        }
+
+        // Enter 키로 이름 입력 확인
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('playerName').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitName();
+                }
+            });
+        });
 
         function startGame(difficulty) {
             gameState.difficulty = difficulty;
@@ -266,6 +310,7 @@
             document.getElementById('difficultySelection').classList.add('hidden');
             document.getElementById('gameArea').classList.remove('hidden');
             document.getElementById('currentDifficulty').textContent = difficulties[difficulty].name;
+            document.getElementById('playerInfo').textContent = gameState.playerName;
             
             initializeGame();
         }
@@ -450,7 +495,7 @@
             
             if (won) {
                 const timeElapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                showGameOverMessage(`🎉 축하합니다! 승리하셨습니다!\n소요 시간: ${timeElapsed}초`, 'win');
+                showGameOverMessage(`🎉 축하합니다, ${gameState.playerName}님! 승리하셨습니다!\n소요 시간: ${timeElapsed}초`, 'win');
             } else {
                 // 모든 지뢰 표시
                 for (let i = 0; i < gameState.rows; i++) {
@@ -499,9 +544,12 @@
 
         function resetGame() {
             stopTimer();
-            document.getElementById('difficultySelection').classList.remove('hidden');
+            document.getElementById('nameInput').classList.remove('hidden');
+            document.getElementById('difficultySelection').classList.add('hidden');
             document.getElementById('gameArea').classList.add('hidden');
             document.getElementById('timer').textContent = '0';
+            document.getElementById('playerName').value = '';
+            gameState.playerName = '';
         }
     </script>
 </body>

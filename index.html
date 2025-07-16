@@ -271,11 +271,40 @@
             playerName: ''
         };
 
+        // Google Apps Script 웹 앱 URL (2단계에서 복사한 URL로 변경하세요)
+        const APPS_SCRIPT_URL = '17E9JFksbBiSVn3kE0GAbH_8YD-Ya0UYmEch0zdMsQxI';
+
         const difficulties = {
             easy: { mines: 10, name: '초급' },
             medium: { mines: 20, name: '중급' },
             hard: { mines: 30, name: '고급' }
         };
+
+        // 스프레드시트에 데이터 저장 함수
+        async function saveToSpreadsheet(name, difficulty, time) {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        difficulty: difficulty,
+                        time: time
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log('데이터가 성공적으로 저장되었습니다.');
+                } else {
+                    console.error('저장 실패:', result.message);
+                }
+            } catch (error) {
+                console.error('스프레드시트 저장 오류:', error);
+            }
+        }
 
         function submitName() {
             const nameInput = document.getElementById('playerName');
@@ -495,7 +524,11 @@
             
             if (won) {
                 const timeElapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                showGameOverMessage(`🎉 축하합니다, ${gameState.playerName}님! 승리하셨습니다!\n소요 시간: ${timeElapsed}초`, 'win');
+                
+                // 스프레드시트에 데이터 저장 (성공 시에만)
+                saveToSpreadsheet(gameState.playerName, difficulties[gameState.difficulty].name, timeElapsed);
+                
+                showGameOverMessage(`🎉 축하합니다, ${gameState.playerName}님! 승리하셨습니다!\n소요 시간: ${timeElapsed}초\n결과가 저장되었습니다!`, 'win');
             } else {
                 // 모든 지뢰 표시
                 for (let i = 0; i < gameState.rows; i++) {
